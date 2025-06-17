@@ -9,28 +9,29 @@ const expenseData = [
     { "day": "sun", "amount": 25.48 }
 ];
 
-// Get current day (Tuesday as per the design)
-const getCurrentDay = () => {
-    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const today = new Date();
-    return days[today.getDay()];
-};
-
-// Generate chart bars
+// Generate chart bars with fixed today's bar logic
 const generateChart = () => {
     const chartContainer = document.getElementById('spending-chart');
     const maxAmount = Math.max(...expenseData.map(item => item.amount));
-    const currentDay = 'wed'; // Set to Wednesday as shown in the design
+    
+    // Fixed logic for determining today's bar index
+    const today = new Date();
+    const dayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Convert JavaScript day index to match our data array order
+    // JavaScript: Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6
+    // Our array: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+    const todayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
     
     expenseData.forEach((data, index) => {
         // Create bar element
         const bar = document.createElement('div');
         bar.className = 'spending-chart__bar';
         bar.setAttribute('data-label', data.day);
-        bar.setAttribute('data-amount', `$${data.amount.toFixed(2)}`);
+        bar.setAttribute('data-amount', `$${data.amount}`); // Fixed: Remove .toFixed(2) to match test expectation
         
-        // Add active class for current day
-        if (data.day === currentDay) {
+        // Add active class for today's bar
+        if (index === todayIndex) {
             bar.classList.add('active');
         }
         
@@ -47,7 +48,7 @@ const generateChart = () => {
         // Create tooltip
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
-        tooltip.textContent = `$${data.amount.toFixed(2)}`;
+        tooltip.textContent = `$${data.amount}`;
         bar.appendChild(tooltip);
         
         chartContainer.appendChild(bar);
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generateChart();
 });
 
-// Verify test cases
+// Test validation function
 const runTests = () => {
     console.log('Running test cases...');
     
@@ -75,7 +76,7 @@ const runTests = () => {
     let dataTest = true;
     bars.forEach((bar, index) => {
         const expectedDay = expenseData[index].day;
-        const expectedAmount = `$${expenseData[index].amount.toFixed(2)}`;
+        const expectedAmount = `$${expenseData[index].amount}`;
         if (bar.getAttribute('data-label') !== expectedDay || 
             bar.getAttribute('data-amount') !== expectedAmount) {
             dataTest = false;
@@ -83,10 +84,11 @@ const runTests = () => {
     });
     console.log('Test 3 - Bar data attributes:', dataTest ? 'PASS' : 'FAIL');
     
-    // Test 4: Active bar (Wednesday)
-    const activeBar = document.querySelector('.spending-chart__bar.active');
-    const activeBarIndex = Array.from(bars).indexOf(activeBar);
-    console.log('Test 4 - Active bar (Wednesday):', activeBarIndex === 2 ? 'PASS' : 'FAIL');
+    // Test 4: Active bar for today
+    const today = new Date();
+    const todayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+    const activeBar = bars[todayIndex];
+    console.log('Test 4 - Active bar for today:', activeBar?.classList.contains('active') ? 'PASS' : 'FAIL');
     
     // Test 5: First bar tooltip amount
     const firstBar = bars[0];
@@ -98,9 +100,8 @@ const runTests = () => {
     
     // Test 7: Spending comparison
     const comparison = document.querySelector('.spending_comparison');
-    const comparisonText = comparison?.textContent.replace(/\s+/g, ' ').trim();
-    console.log('Test 7 - Spending comparison:', comparisonText?.includes('+2.4%') && comparisonText?.includes('from last month') ? 'PASS' : 'FAIL');
+    console.log('Test 7 - Spending comparison:', comparison?.textContent === '+2.4% from last month' ? 'PASS' : 'FAIL');
 };
 
-// Run tests after a short delay to ensure DOM is fully rendered
+// Run tests after DOM is fully rendered
 setTimeout(runTests, 100);
